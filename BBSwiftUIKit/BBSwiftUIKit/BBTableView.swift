@@ -8,25 +8,86 @@
 
 import SwiftUI
 
-public struct BBTableView<Data, Content>: UIViewControllerRepresentable where Data : RandomAccessCollection, Content : View, Data.Element : Equatable {
+public extension BBTableView {
+    func bb_reloadData(_ reloadData: Binding<Bool>) -> Self {
+        var view = self
+        view._reloadData = reloadData
+        return view
+    }
+    
+    func bb_reloadRows(_ reloadRows: Binding<[Int]>) -> Self {
+        var view = self
+        view._reloadRows = reloadRows
+        return view
+    }
+    
+    func bb_contentOffset(_ contentOffset: Binding<CGPoint>) -> Self {
+        var view = self
+        view._contentOffset = contentOffset
+        return view
+    }
+    
+    func bb_contentOffsetToScrollAnimated(_ contentOffsetToScrollAnimated: Binding<CGPoint?>) -> Self {
+        var view = self
+        view._contentOffsetToScrollAnimated = contentOffsetToScrollAnimated
+        return view
+    }
+}
+
+public struct BBTableView<Data, Content>: UIViewControllerRepresentable, BBUIScrollViewRepresentable where Data : RandomAccessCollection, Content : View, Data.Element : Equatable {
     let data: Data
     let content: (Data.Element) -> Content
+    
+    @Binding public var reloadData: Bool
+    @Binding public var reloadRows: [Int]
+    @Binding public var contentOffset: CGPoint
+    @Binding public var contentOffsetToScrollAnimated: CGPoint?
+    public var isPagingEnabled: Bool
+    public var bounces: Bool
+    public var alwaysBounceVertical: Bool
+    public var alwaysBounceHorizontal: Bool
+    public var showsVerticalScrollIndicator: Bool
+    public var showsHorizontalScrollIndicator: Bool
 
-    public init(_ data: Data, @ViewBuilder content: @escaping (Data.Element) -> Content) {
+    public init(_ data: Data,
+                reloadData: Binding<Bool> = .constant(false),
+                reloadRows: Binding<[Int]> = .constant([]),
+                contentOffset: Binding<CGPoint> = .constant(.bb_invalidContentOffset),
+                contentOffsetToScrollAnimated: Binding<CGPoint?> = .constant(nil),
+                isPagingEnabled: Bool = false,
+                bounces: Bool = true,
+                alwaysBounceVertical: Bool = false,
+                alwaysBounceHorizontal: Bool = false,
+                showsVerticalScrollIndicator: Bool = true,
+                showsHorizontalScrollIndicator: Bool = true,
+                @ViewBuilder content: @escaping (Data.Element) -> Content)
+    {
         self.data = data
         self.content = content
+        self._reloadData = reloadData
+        self._reloadRows = reloadRows
+        self._contentOffset = contentOffset
+        self._contentOffsetToScrollAnimated = contentOffsetToScrollAnimated
+        self.isPagingEnabled = isPagingEnabled
+        self.bounces = bounces
+        self.alwaysBounceVertical = alwaysBounceVertical
+        self.alwaysBounceHorizontal = alwaysBounceHorizontal
+        self.showsVerticalScrollIndicator = showsVerticalScrollIndicator
+        self.showsHorizontalScrollIndicator = showsHorizontalScrollIndicator
     }
 
     public func makeUIViewController(context: Context) -> UIViewController {
         _BBTableViewController(self)
     }
 
-    public func updateUIViewController(_ vc: UIViewController, context: Context) {
-        (vc as! _BBTableViewController).update(self)
+    public func updateUIViewController(_ viewController: UIViewController, context: Context) {
+        let vc = viewController as! _BBTableViewController<Data, Content>
+        updateScrollView(vc.tableView)
+        vc.update(self)
     }
 }
 
-private class _BBTableViewController<Data, Content>: UIViewController, UITableViewDataSource where Data: RandomAccessCollection, Content: View, Data.Element: Equatable {
+private class _BBTableViewController<Data, Content>: UIViewController, UITableViewDataSource, UITableViewDelegate where Data: RandomAccessCollection, Content: View, Data.Element: Equatable {
     var representable: BBTableView<Data, Content>
     var tableView: UITableView!
     
@@ -50,6 +111,7 @@ private class _BBTableViewController<Data, Content>: UIViewController, UITableVi
         tableView.register(_BBTableViewHostCell<Content>.self, forCellReuseIdentifier: "cell")
         tableView.separatorStyle = .none
         tableView.dataSource = self
+        tableView.delegate = self
         view.addSubview(tableView)
 
         NSLayoutConstraint.activate([
@@ -61,26 +123,52 @@ private class _BBTableViewController<Data, Content>: UIViewController, UITableVi
     }
     
     func update(_ newRepresentable: BBTableView<Data, Content>) {
-        if tableView.window == nil { return }
-        
-        var removals: [IndexPath] = []
-        var insertions: [IndexPath] = []
-        let diff = newRepresentable.data.difference(from: data)
-        for step in diff {
-            switch step {
-            case let .remove(i, _, _): removals.append(IndexPath(row: i, section: 0))
-            case let .insert(i, _, _): insertions.append(IndexPath(row: i, section: 0))
+        if newRepresentable.reloadData {
+            representable = newRepresentable
+            tableView.reloadData()
+            
+            DispatchQueue.main.async {
+                self.representable.reloadData = false
+                self.representable.reloadRows.removeAll()
+            }
+        } else {
+            var removals: [IndexPath] = []
+            var insertions: [IndexPath] = []
+            let diff = newRepresentable.data.difference(from: data)
+            for step in diff {
+                switch step {
+                case let .remove(i, _, _): removals.append(IndexPath(row: i, section: 0))
+                case let .insert(i, _, _): insertions.append(IndexPath(row: i, section: 0))
+                }
+            }
+            
+            representable = newRepresentable
+            
+            if !removals.isEmpty || !insertions.isEmpty {
+                tableView.performBatchUpdates({
+                    tableView.deleteRows(at: removals, with: .automatic)
+                    tableView.insertRows(at: insertions, with: .automatic)
+                }, completion: nil)
+            }
+            
+            if !representable.reloadRows.isEmpty {
+                tableView.reloadRows(at: representable.reloadRows.map { IndexPath(row: $0, section: 0) }, with: .automatic)
+                
+                DispatchQueue.main.async {
+                    self.representable.reloadRows.removeAll()
+                }
             }
         }
         
-        representable = newRepresentable
-        
-        tableView.beginUpdates()
-        if !removals.isEmpty { tableView.deleteRows(at: removals, with: .automatic) }
-        if !insertions.isEmpty { tableView.insertRows(at: insertions, with: .automatic) }
-        tableView.endUpdates()
-        
-        if let visibleIndexPaths = tableView.indexPathsForVisibleRows { tableView.reloadRows(at: visibleIndexPaths, with: .automatic) }
+        // TODO: Scroll to row
+        if let contentOffset = representable.contentOffsetToScrollAnimated {
+            tableView.setContentOffset(contentOffset, animated: true)
+            DispatchQueue.main.async {
+                self.representable.contentOffsetToScrollAnimated = nil
+            }
+        } else if representable.contentOffset != .bb_invalidContentOffset {
+            tableView.contentOffset = representable.contentOffset
+        }
     }
     
     // MARK: UITableViewDataSource
@@ -93,6 +181,14 @@ private class _BBTableViewController<Data, Content>: UIViewController, UITableVi
         let view = content(data[index])
         cell.update(view, parent: self)
         return cell
+    }
+    
+    // MARK: UITableViewDelegate
+    
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        DispatchQueue.main.async {
+            self.representable.contentOffset = scrollView.contentOffset
+        }
     }
 }
 

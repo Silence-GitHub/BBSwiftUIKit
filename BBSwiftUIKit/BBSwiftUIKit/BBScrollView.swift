@@ -8,71 +8,95 @@
 
 import SwiftUI
 
+public protocol BBUIScrollViewRepresentable {
+    var contentOffset: CGPoint { get set }
+    var contentOffsetToScrollAnimated: CGPoint? { get set }
+    var isPagingEnabled: Bool { get set }
+    var bounces: Bool { get set }
+    var alwaysBounceVertical: Bool { get set }
+    var alwaysBounceHorizontal: Bool { get set }
+    var showsVerticalScrollIndicator: Bool { get set }
+    var showsHorizontalScrollIndicator: Bool { get set }
+    
+    func updateScrollView(_ scrollView: UIScrollView)
+}
+
 public extension CGPoint {
     static let bb_invalidContentOffset = CGPoint(x: CGFloat.greatestFiniteMagnitude, y: CGFloat.greatestFiniteMagnitude)
 }
 
-public extension BBScrollView {
-    func bb_contentOffset(_ contentOffset: Binding<CGPoint>) -> BBScrollView {
-        var view = self
-        view._contentOffset = contentOffset
-        return view
-    }
-    
-    func bb_contentOffsetToScrollAnimated(_ contentOffsetToScrollAnimated: Binding<CGPoint?>) -> BBScrollView {
-        var view = self
-        view._contentOffsetToScrollAnimated = contentOffsetToScrollAnimated
-        return view
-    }
-    
-    func bb_isPagingEnabled(_ isPagingEnabled: Bool) -> BBScrollView {
+public extension BBUIScrollViewRepresentable {
+    func bb_isPagingEnabled(_ isPagingEnabled: Bool) -> Self {
         var view = self
         view.isPagingEnabled = isPagingEnabled
         return view
     }
     
-    func bb_bounces(_ bounces: Bool) -> BBScrollView {
+    func bb_bounces(_ bounces: Bool) -> Self {
         var view = self
         view.bounces = bounces
         return view
     }
     
-    func bb_alwaysBounceVertical(_ alwaysBounceVertical: Bool) -> BBScrollView {
+    func bb_alwaysBounceVertical(_ alwaysBounceVertical: Bool) -> Self {
         var view = self
         view.alwaysBounceVertical = alwaysBounceVertical
         return view
     }
     
-    func bb_alwaysBounceHorizontal(_ alwaysBounceHorizontal: Bool) -> BBScrollView {
+    func bb_alwaysBounceHorizontal(_ alwaysBounceHorizontal: Bool) -> Self {
         var view = self
         view.alwaysBounceHorizontal = alwaysBounceHorizontal
         return view
     }
     
-    func bb_showsVerticalScrollIndicator(_ showsVerticalScrollIndicator: Bool) -> BBScrollView {
+    func bb_showsVerticalScrollIndicator(_ showsVerticalScrollIndicator: Bool) -> Self {
         var view = self
         view.showsVerticalScrollIndicator = showsVerticalScrollIndicator
         return view
     }
     
-    func bb_showsHorizontalScrollIndicator(_ showsHorizontalScrollIndicator: Bool) -> BBScrollView {
+    func bb_showsHorizontalScrollIndicator(_ showsHorizontalScrollIndicator: Bool) -> Self {
         var view = self
         view.showsHorizontalScrollIndicator = showsHorizontalScrollIndicator
         return view
     }
+    
+    func updateScrollView(_ scrollView: UIScrollView) {
+        scrollView.isPagingEnabled = isPagingEnabled
+        scrollView.bounces = bounces
+        scrollView.alwaysBounceVertical = alwaysBounceVertical
+        scrollView.alwaysBounceHorizontal = alwaysBounceHorizontal
+        scrollView.showsVerticalScrollIndicator = showsVerticalScrollIndicator
+        scrollView.showsHorizontalScrollIndicator = showsHorizontalScrollIndicator
+    }
 }
 
-public struct BBScrollView<Content: View>: UIViewRepresentable {
-    let axis: Axis.Set
-    @Binding var contentOffset: CGPoint
-    @Binding var contentOffsetToScrollAnimated: CGPoint?
-    var isPagingEnabled: Bool
-    var bounces: Bool
-    var alwaysBounceVertical: Bool
-    var alwaysBounceHorizontal: Bool
-    var showsVerticalScrollIndicator: Bool
-    var showsHorizontalScrollIndicator: Bool
-    let content: () -> Content
+public extension BBScrollView {
+    func bb_contentOffset(_ contentOffset: Binding<CGPoint>) -> Self {
+        var view = self
+        view._contentOffset = contentOffset
+        return view
+    }
+    
+    func bb_contentOffsetToScrollAnimated(_ contentOffsetToScrollAnimated: Binding<CGPoint?>) -> Self {
+        var view = self
+        view._contentOffsetToScrollAnimated = contentOffsetToScrollAnimated
+        return view
+    }
+}
+
+public struct BBScrollView<Content: View>: UIViewRepresentable, BBUIScrollViewRepresentable {
+    public let axis: Axis.Set
+    @Binding public var contentOffset: CGPoint
+    @Binding public var contentOffsetToScrollAnimated: CGPoint?
+    public var isPagingEnabled: Bool
+    public var bounces: Bool
+    public var alwaysBounceVertical: Bool
+    public var alwaysBounceHorizontal: Bool
+    public var showsVerticalScrollIndicator: Bool
+    public var showsHorizontalScrollIndicator: Bool
+    public let content: () -> Content
     
     public init(_ axis: Axis.Set,
                 contentOffset: Binding<CGPoint> = .constant(.bb_invalidContentOffset),
@@ -135,12 +159,8 @@ public struct BBScrollView<Content: View>: UIViewRepresentable {
         } else if contentOffset != .bb_invalidContentOffset {
             scrollView.contentOffset = contentOffset
         }
-        scrollView.isPagingEnabled = isPagingEnabled
-        scrollView.bounces = bounces
-        scrollView.alwaysBounceVertical = alwaysBounceVertical
-        scrollView.alwaysBounceHorizontal = alwaysBounceHorizontal
-        scrollView.showsVerticalScrollIndicator = showsVerticalScrollIndicator
-        scrollView.showsHorizontalScrollIndicator = showsHorizontalScrollIndicator
+        
+        updateScrollView(scrollView)
         
         let host = context.coordinator.host!
         host.rootView = content()

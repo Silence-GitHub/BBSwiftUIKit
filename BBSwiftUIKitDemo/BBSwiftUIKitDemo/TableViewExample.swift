@@ -12,6 +12,10 @@ import BBSwiftUIKit
 struct TableViewExample: View {
     @State var list = 0..<100
     @State var updateHeight = false
+    @State var reloadData = false
+    @State var reloadRows: [Int] = []
+    @State var contentOffset: CGPoint = .zero
+    @State var contentOffsetToScrollAnimated: CGPoint? = nil
     
     var body: some View {
         VStack {
@@ -30,14 +34,41 @@ struct TableViewExample: View {
                         .background(Color.orange)
                 }
             }
-            Button("Update") {
+            .bb_reloadData($reloadData)
+            .bb_reloadRows($reloadRows)
+            .bb_contentOffsetToScrollAnimated($contentOffsetToScrollAnimated)
+            .bb_contentOffset($contentOffset)
+            
+            Slider(value: $contentOffset.y, in: 0...1000)
+            
+            Button("Scroll to y = 1000") {
+                self.contentOffsetToScrollAnimated = CGPoint(x: 0, y: 1000)
+            }
+            .padding()
+            
+            Button("Reload data") {
                 if self.list.count > 50 {
                     self.list = 0..<50
                 } else {
                     self.list = 0..<100
                 }
                 self.updateHeight.toggle()
+                
+                self.reloadData = true
             }
+            .padding()
+            
+            Button("Reload rows") {
+                if self.list.count > 50 {
+                    self.list = 0..<50
+                } else {
+                    self.list = 0..<100
+                }
+                self.updateHeight.toggle()
+                
+                self.reloadRows = (0..<10).map { $0 }
+            }
+            .padding()
         }
     }
 }
