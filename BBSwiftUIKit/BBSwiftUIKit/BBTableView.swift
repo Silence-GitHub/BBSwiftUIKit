@@ -148,7 +148,8 @@ private class _BBTableViewController<Data, Content>: UIViewController, UITableVi
             representable = newRepresentable
             tableView.reloadData()
             
-            DispatchQueue.main.async {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
                 self.representable.reloadData = false
                 self.representable.reloadRows.removeAll()
             }
@@ -175,7 +176,8 @@ private class _BBTableViewController<Data, Content>: UIViewController, UITableVi
             if !representable.reloadRows.isEmpty {
                 tableView.reloadRows(at: representable.reloadRows.map { IndexPath(row: $0, section: 0) }, with: .automatic)
                 
-                DispatchQueue.main.async {
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
                     self.representable.reloadRows.removeAll()
                 }
             }
@@ -183,12 +185,14 @@ private class _BBTableViewController<Data, Content>: UIViewController, UITableVi
         
         if let scrollToRow = representable.scrollToRow {
             tableView.scrollToRow(at: IndexPath(row: scrollToRow.row, section: 0), at: scrollToRow.position, animated: scrollToRow.animated)
-            DispatchQueue.main.async {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
                 self.representable.scrollToRow = nil
             }
         } else if let contentOffset = representable.contentOffsetToScrollAnimated {
             tableView.setContentOffset(contentOffset, animated: true)
-            DispatchQueue.main.async {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
                 self.representable.contentOffsetToScrollAnimated = nil
             }
         } else if representable.contentOffset != .bb_invalidContentOffset {
@@ -211,7 +215,8 @@ private class _BBTableViewController<Data, Content>: UIViewController, UITableVi
     // MARK: UITableViewDelegate
     
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
             self.representable.contentOffset = scrollView.contentOffset
         }
     }

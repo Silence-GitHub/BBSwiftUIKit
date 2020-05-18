@@ -182,7 +182,8 @@ public struct BBScrollView<Content: View>: UIViewRepresentable, BBUIScrollViewRe
         // MARK: UIScrollViewDelegate
         
         public func scrollViewDidScroll(_ scrollView: UIScrollView) {
-            DispatchQueue.main.async {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
                 self.parent.contentOffset = scrollView.contentOffset
             }
         }
