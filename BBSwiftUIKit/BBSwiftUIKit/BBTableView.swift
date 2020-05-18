@@ -21,6 +21,12 @@ public extension BBTableView {
         return view
     }
     
+    func bb_scrollToRow(_ scrollToRow: Binding<BBTableViewScrollToRowParameter?>) -> Self {
+        var view = self
+        view._scrollToRow = scrollToRow
+        return view
+    }
+    
     func bb_contentOffset(_ contentOffset: Binding<CGPoint>) -> Self {
         var view = self
         view._contentOffset = contentOffset
@@ -34,12 +40,25 @@ public extension BBTableView {
     }
 }
 
+public struct BBTableViewScrollToRowParameter {
+    public let row: Int
+    public let position: UITableView.ScrollPosition
+    public let animated: Bool
+    
+    public init(row: Int, position: UITableView.ScrollPosition, animated: Bool) {
+        self.row = row
+        self.position = position
+        self.animated = animated
+    }
+}
+
 public struct BBTableView<Data, Content>: UIViewControllerRepresentable, BBUIScrollViewRepresentable where Data : RandomAccessCollection, Content : View, Data.Element : Equatable {
     let data: Data
     let content: (Data.Element) -> Content
     
     @Binding public var reloadData: Bool
     @Binding public var reloadRows: [Int]
+    @Binding public var scrollToRow: BBTableViewScrollToRowParameter?
     @Binding public var contentOffset: CGPoint
     @Binding public var contentOffsetToScrollAnimated: CGPoint?
     public var isPagingEnabled: Bool
@@ -52,6 +71,7 @@ public struct BBTableView<Data, Content>: UIViewControllerRepresentable, BBUIScr
     public init(_ data: Data,
                 reloadData: Binding<Bool> = .constant(false),
                 reloadRows: Binding<[Int]> = .constant([]),
+                scrollToRow: Binding<BBTableViewScrollToRowParameter?> = .constant(nil),
                 contentOffset: Binding<CGPoint> = .constant(.bb_invalidContentOffset),
                 contentOffsetToScrollAnimated: Binding<CGPoint?> = .constant(nil),
                 isPagingEnabled: Bool = false,
@@ -66,6 +86,7 @@ public struct BBTableView<Data, Content>: UIViewControllerRepresentable, BBUIScr
         self.content = content
         self._reloadData = reloadData
         self._reloadRows = reloadRows
+        self._scrollToRow = scrollToRow
         self._contentOffset = contentOffset
         self._contentOffsetToScrollAnimated = contentOffsetToScrollAnimated
         self.isPagingEnabled = isPagingEnabled
@@ -160,8 +181,12 @@ private class _BBTableViewController<Data, Content>: UIViewController, UITableVi
             }
         }
         
-        // TODO: Scroll to row
-        if let contentOffset = representable.contentOffsetToScrollAnimated {
+        if let scrollToRow = representable.scrollToRow {
+            tableView.scrollToRow(at: IndexPath(row: scrollToRow.row, section: 0), at: scrollToRow.position, animated: scrollToRow.animated)
+            DispatchQueue.main.async {
+                self.representable.scrollToRow = nil
+            }
+        } else if let contentOffset = representable.contentOffsetToScrollAnimated {
             tableView.setContentOffset(contentOffset, animated: true)
             DispatchQueue.main.async {
                 self.representable.contentOffsetToScrollAnimated = nil

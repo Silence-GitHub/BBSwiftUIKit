@@ -14,6 +14,7 @@ struct TableViewExample: View {
     @State var updateHeight = false
     @State var reloadData = false
     @State var reloadRows: [Int] = []
+    @State var scrollToRow: BBTableViewScrollToRowParameter? = nil
     @State var contentOffset: CGPoint = .zero
     @State var contentOffsetToScrollAnimated: CGPoint? = nil
     
@@ -36,8 +37,9 @@ struct TableViewExample: View {
             }
             .bb_reloadData($reloadData)
             .bb_reloadRows($reloadRows)
-            .bb_contentOffsetToScrollAnimated($contentOffsetToScrollAnimated)
+            .bb_scrollToRow($scrollToRow)
             .bb_contentOffset($contentOffset)
+            .bb_contentOffsetToScrollAnimated($contentOffsetToScrollAnimated)
             
             Slider(value: $contentOffset.y, in: 0...1000)
             
@@ -53,8 +55,8 @@ struct TableViewExample: View {
                     self.list = 0..<100
                 }
                 self.updateHeight.toggle()
-                
                 self.reloadData = true
+                self.scrollToRow = BBTableViewScrollToRowParameter(row: 0, position: .top, animated: true)
             }
             .padding()
             
@@ -65,8 +67,8 @@ struct TableViewExample: View {
                     self.list = 0..<100
                 }
                 self.updateHeight.toggle()
-                
                 self.reloadRows = (0..<10).map { $0 }
+                self.scrollToRow = BBTableViewScrollToRowParameter(row: 0, position: .top, animated: true)
             }
             .padding()
         }
