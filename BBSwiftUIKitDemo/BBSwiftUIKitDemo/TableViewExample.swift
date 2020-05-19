@@ -17,6 +17,7 @@ struct TableViewExample: View {
     @State var scrollToRow: BBTableViewScrollToRowParameter? = nil
     @State var contentOffset: CGPoint = .zero
     @State var contentOffsetToScrollAnimated: CGPoint? = nil
+    @State var isRefreshing: Bool = false
     
     var body: some View {
         VStack {
@@ -40,6 +41,16 @@ struct TableViewExample: View {
             .bb_scrollToRow($scrollToRow)
             .bb_contentOffset($contentOffset)
             .bb_contentOffsetToScrollAnimated($contentOffsetToScrollAnimated)
+            .bb_setupRefreshControl { refreshControl in
+                refreshControl.tintColor = .blue
+                refreshControl.attributedTitle = NSAttributedString(string: "Loading...", attributes: [.font: UIFont.systemFont(ofSize: 15), .foregroundColor: UIColor.blue])
+            }
+            .bb_pullDownToRefresh($isRefreshing) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    self.reloadListData()
+                    self.isRefreshing = false
+                }
+            }
             
             Slider(value: $contentOffset.y, in: 0...1000)
             
@@ -49,29 +60,37 @@ struct TableViewExample: View {
             .padding()
             
             Button("Reload data") {
-                if self.list.count > 50 {
-                    self.list = 0..<50
-                } else {
-                    self.list = 0..<100
-                }
-                self.updateHeight.toggle()
-                self.reloadData = true
+                self.reloadListData()
                 self.scrollToRow = BBTableViewScrollToRowParameter(row: 0, position: .top, animated: true)
             }
             .padding()
             
             Button("Reload rows") {
-                if self.list.count > 50 {
-                    self.list = 0..<50
-                } else {
-                    self.list = 0..<100
-                }
-                self.updateHeight.toggle()
-                self.reloadRows = (0..<10).map { $0 }
+                self.reloadListRows()
                 self.scrollToRow = BBTableViewScrollToRowParameter(row: 0, position: .top, animated: true)
             }
             .padding()
         }
+    }
+    
+    private func reloadListData() {
+        if self.list.count > 50 {
+            self.list = 0..<50
+        } else {
+            self.list = 0..<100
+        }
+        self.updateHeight.toggle()
+        self.reloadData = true
+    }
+    
+    private func reloadListRows() {
+        if self.list.count > 50 {
+            self.list = 0..<50
+        } else {
+            self.list = 0..<100
+        }
+        self.updateHeight.toggle()
+        self.reloadRows = (0..<10).map { $0 }
     }
 }
 

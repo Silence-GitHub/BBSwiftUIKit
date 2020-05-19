@@ -37,6 +37,7 @@ struct ContentView: View {
                     Text("Table view")
                 }
             }
+            .navigationBarTitle("", displayMode: .inline)
         }
     }
 }

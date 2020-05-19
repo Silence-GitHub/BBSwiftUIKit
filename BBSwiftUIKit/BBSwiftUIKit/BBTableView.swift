@@ -38,6 +38,19 @@ public extension BBTableView {
         view._contentOffsetToScrollAnimated = contentOffsetToScrollAnimated
         return view
     }
+    
+    func bb_setupRefreshControl(_ setupRefreshControl: @escaping (UIRefreshControl) -> Void) -> Self {
+        var view = self
+        view.setupRefreshControl = setupRefreshControl
+        return view
+    }
+    
+    func bb_pullDownToRefresh(_ isRefreshing: Binding<Bool>, refresh: @escaping () -> Void) -> Self {
+        var view = self
+        view._isRefreshing = isRefreshing
+        view.pullDownToRefresh = refresh
+        return view
+    }
 }
 
 public struct BBTableViewScrollToRowParameter {
@@ -67,6 +80,10 @@ public struct BBTableView<Data, Content>: UIViewControllerRepresentable, BBUIScr
     public var alwaysBounceHorizontal: Bool
     public var showsVerticalScrollIndicator: Bool
     public var showsHorizontalScrollIndicator: Bool
+    
+    @Binding public var isRefreshing: Bool
+    public var setupRefreshControl: ((UIRefreshControl) -> Void)?
+    public var pullDownToRefresh: (() -> Void)?
 
     public init(_ data: Data,
                 reloadData: Binding<Bool> = .constant(false),
@@ -80,6 +97,9 @@ public struct BBTableView<Data, Content>: UIViewControllerRepresentable, BBUIScr
                 alwaysBounceHorizontal: Bool = false,
                 showsVerticalScrollIndicator: Bool = true,
                 showsHorizontalScrollIndicator: Bool = true,
+                isRefreshing: Binding<Bool> = .constant(false),
+                setupRefreshControl: ((UIRefreshControl) -> Void)? = nil,
+                pullDownToRefresh: (() -> Void)? = nil,
                 @ViewBuilder content: @escaping (Data.Element) -> Content)
     {
         self.data = data
@@ -95,6 +115,9 @@ public struct BBTableView<Data, Content>: UIViewControllerRepresentable, BBUIScr
         self.alwaysBounceHorizontal = alwaysBounceHorizontal
         self.showsVerticalScrollIndicator = showsVerticalScrollIndicator
         self.showsHorizontalScrollIndicator = showsHorizontalScrollIndicator
+        self._isRefreshing = isRefreshing
+        self.setupRefreshControl = setupRefreshControl
+        self.pullDownToRefresh = pullDownToRefresh
     }
 
     public func makeUIViewController(context: Context) -> UIViewController {
@@ -134,6 +157,15 @@ private class _BBTableViewController<Data, Content>: UIViewController, UITableVi
         tableView.dataSource = self
         tableView.delegate = self
         view.addSubview(tableView)
+        
+        if representable.setupRefreshControl != nil || representable.pullDownToRefresh != nil {
+            let refreshControl = UIRefreshControl()
+            representable.setupRefreshControl?(refreshControl)
+            refreshControl.addTarget(self, action: #selector(pullDownToRefresh), for: .valueChanged)
+            tableView.refreshControl = refreshControl
+        }
+        
+        // TODO: Detect content offset to bottom space and load more data
 
         NSLayoutConstraint.activate([
             view.leftAnchor.constraint(equalTo: tableView.leftAnchor),
@@ -183,6 +215,15 @@ private class _BBTableViewController<Data, Content>: UIViewController, UITableVi
             }
         }
         
+        if let refreshControl = tableView.refreshControl,
+            representable.isRefreshing != refreshControl.isRefreshing {
+            if representable.isRefreshing {
+                refreshControl.beginRefreshing()
+            } else {
+                refreshControl.endRefreshing()
+            }
+        }
+        
         if let scrollToRow = representable.scrollToRow {
             tableView.scrollToRow(at: IndexPath(row: scrollToRow.row, section: 0), at: scrollToRow.position, animated: scrollToRow.animated)
             DispatchQueue.main.async { [weak self] in
@@ -198,6 +239,11 @@ private class _BBTableViewController<Data, Content>: UIViewController, UITableVi
         } else if representable.contentOffset != .bb_invalidContentOffset {
             tableView.contentOffset = representable.contentOffset
         }
+    }
+    
+    @objc private func pullDownToRefresh() {
+        representable.isRefreshing = true
+        representable.pullDownToRefresh?()
     }
     
     // MARK: UITableViewDataSource
