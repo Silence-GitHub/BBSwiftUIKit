@@ -97,63 +97,31 @@ public struct BBTableView<Data, Content>: UIViewControllerRepresentable, BBUIScr
     @Binding public var scrollToRow: BBTableViewScrollToRowParameter?
     @Binding public var contentOffset: CGPoint
     @Binding public var contentOffsetToScrollAnimated: CGPoint?
-    public var isPagingEnabled: Bool
-    public var bounces: Bool
-    public var alwaysBounceVertical: Bool
-    public var alwaysBounceHorizontal: Bool
-    public var showsVerticalScrollIndicator: Bool
-    public var showsHorizontalScrollIndicator: Bool
+    public var isPagingEnabled: Bool = false
+    public var bounces: Bool = true
+    public var alwaysBounceVertical: Bool = false
+    public var alwaysBounceHorizontal: Bool = false
+    public var showsVerticalScrollIndicator: Bool = true
+    public var showsHorizontalScrollIndicator: Bool = true
     
     @Binding public var isRefreshing: Bool
     public var setupRefreshControl: ((UIRefreshControl) -> Void)?
     public var pullDownToRefresh: (() -> Void)?
-    public var bottomSpaceForLoadingMore: CGFloat
+    public var bottomSpaceForLoadingMore: CGFloat = .bb_invalidBottomSpaceForLoadingMore
     public var pullUpToLoadMore: (() -> Void)?
     
     public var setupTableView: ((UITableView) -> Void)?
     public var updateTableView: ((UITableView) -> Void)?
 
-    public init(_ data: Data,
-                reloadData: Binding<Bool> = .constant(false),
-                reloadRows: Binding<[Int]> = .constant([]),
-                scrollToRow: Binding<BBTableViewScrollToRowParameter?> = .constant(nil),
-                contentOffset: Binding<CGPoint> = .constant(.bb_invalidContentOffset),
-                contentOffsetToScrollAnimated: Binding<CGPoint?> = .constant(nil),
-                isPagingEnabled: Bool = false,
-                bounces: Bool = true,
-                alwaysBounceVertical: Bool = false,
-                alwaysBounceHorizontal: Bool = false,
-                showsVerticalScrollIndicator: Bool = true,
-                showsHorizontalScrollIndicator: Bool = true,
-                isRefreshing: Binding<Bool> = .constant(false),
-                setupRefreshControl: ((UIRefreshControl) -> Void)? = nil,
-                pullDownToRefresh: (() -> Void)? = nil,
-                bottomSpaceForLoadingMore: CGFloat = .bb_invalidBottomSpaceForLoadingMore,
-                pullUpToLoadMore: (() -> Void)? = nil,
-                setupTableView: ((UITableView) -> Void)? = nil,
-                updateTableView: ((UITableView) -> Void)? = nil,
-                @ViewBuilder content: @escaping (Data.Element) -> Content)
-    {
+    public init(_ data: Data, @ViewBuilder content: @escaping (Data.Element) -> Content) {
         self.data = data
         self.content = content
-        self._reloadData = reloadData
-        self._reloadRows = reloadRows
-        self._scrollToRow = scrollToRow
-        self._contentOffset = contentOffset
-        self._contentOffsetToScrollAnimated = contentOffsetToScrollAnimated
-        self.isPagingEnabled = isPagingEnabled
-        self.bounces = bounces
-        self.alwaysBounceVertical = alwaysBounceVertical
-        self.alwaysBounceHorizontal = alwaysBounceHorizontal
-        self.showsVerticalScrollIndicator = showsVerticalScrollIndicator
-        self.showsHorizontalScrollIndicator = showsHorizontalScrollIndicator
-        self._isRefreshing = isRefreshing
-        self.setupRefreshControl = setupRefreshControl
-        self.pullDownToRefresh = pullDownToRefresh
-        self.bottomSpaceForLoadingMore = bottomSpaceForLoadingMore
-        self.pullUpToLoadMore = pullUpToLoadMore
-        self.setupTableView = setupTableView
-        self.updateTableView = updateTableView
+        self._reloadData = .constant(false)
+        self._reloadRows = .constant([])
+        self._scrollToRow = .constant(nil)
+        self._contentOffset = .constant(.bb_invalidContentOffset)
+        self._contentOffsetToScrollAnimated = .constant(nil)
+        self._isRefreshing = .constant(false)
     }
 
     public func makeUIViewController(context: Context) -> UIViewController {
