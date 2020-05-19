@@ -62,6 +62,18 @@ public extension BBTableView {
         view.pullUpToLoadMore = loadMore
         return view
     }
+    
+    func bb_setupTableView(_ setupTableView: @escaping (UITableView) -> Void) -> Self {
+        var view = self
+        view.setupTableView = setupTableView
+        return view
+    }
+    
+    func bb_updateTableView(_ updateTableView: @escaping (UITableView) -> Void) -> Self {
+        var view = self
+        view.updateTableView = updateTableView
+        return view
+    }
 }
 
 public struct BBTableViewScrollToRowParameter {
@@ -97,6 +109,9 @@ public struct BBTableView<Data, Content>: UIViewControllerRepresentable, BBUIScr
     public var pullDownToRefresh: (() -> Void)?
     public var bottomSpaceForLoadingMore: CGFloat
     public var pullUpToLoadMore: (() -> Void)?
+    
+    public var setupTableView: ((UITableView) -> Void)?
+    public var updateTableView: ((UITableView) -> Void)?
 
     public init(_ data: Data,
                 reloadData: Binding<Bool> = .constant(false),
@@ -115,6 +130,8 @@ public struct BBTableView<Data, Content>: UIViewControllerRepresentable, BBUIScr
                 pullDownToRefresh: (() -> Void)? = nil,
                 bottomSpaceForLoadingMore: CGFloat = .bb_invalidBottomSpaceForLoadingMore,
                 pullUpToLoadMore: (() -> Void)? = nil,
+                setupTableView: ((UITableView) -> Void)? = nil,
+                updateTableView: ((UITableView) -> Void)? = nil,
                 @ViewBuilder content: @escaping (Data.Element) -> Content)
     {
         self.data = data
@@ -135,6 +152,8 @@ public struct BBTableView<Data, Content>: UIViewControllerRepresentable, BBUIScr
         self.pullDownToRefresh = pullDownToRefresh
         self.bottomSpaceForLoadingMore = bottomSpaceForLoadingMore
         self.pullUpToLoadMore = pullUpToLoadMore
+        self.setupTableView = setupTableView
+        self.updateTableView = updateTableView
     }
 
     public func makeUIViewController(context: Context) -> UIViewController {
@@ -182,14 +201,14 @@ private class _BBTableViewController<Data, Content>: UIViewController, UITableVi
             tableView.refreshControl = refreshControl
         }
         
-        // TODO: Refresh when first will appear
-
         NSLayoutConstraint.activate([
             view.leftAnchor.constraint(equalTo: tableView.leftAnchor),
             view.rightAnchor.constraint(equalTo: tableView.rightAnchor),
             view.topAnchor.constraint(equalTo: tableView.topAnchor),
             view.bottomAnchor.constraint(equalTo: tableView.bottomAnchor)
         ])
+        
+        representable.setupTableView?(tableView)
     }
     
     func update(_ newRepresentable: BBTableView<Data, Content>) {
@@ -240,6 +259,8 @@ private class _BBTableViewController<Data, Content>: UIViewController, UITableVi
                 refreshControl.endRefreshing()
             }
         }
+        
+        representable.updateTableView?(tableView)
         
         if let scrollToRow = representable.scrollToRow {
             tableView.scrollToRow(at: IndexPath(row: scrollToRow.row, section: 0), at: scrollToRow.position, animated: scrollToRow.animated)
