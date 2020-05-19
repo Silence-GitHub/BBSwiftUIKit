@@ -31,21 +31,13 @@ public extension BBPageControl {
 public struct BBPageControl: UIViewRepresentable {
     @Binding var currentPage: Int
     var numberOfPages: Int
-    var hidesForSinglePage: Bool
+    var hidesForSinglePage: Bool = false
     var pageIndicatorTintColor: UIColor?
     var currentPageIndicatorTintColor: UIColor?
     
-    public init(currentPage: Binding<Int>,
-                numberOfPages: Int,
-                hidesForSinglePage: Bool = false,
-                pageIndicatorTintColor: UIColor? = nil,
-                currentPageIndicatorTintColor: UIColor? = nil)
-    {
+    public init(currentPage: Binding<Int>, numberOfPages: Int) {
         self._currentPage = currentPage
         self.numberOfPages = numberOfPages
-        self.hidesForSinglePage = hidesForSinglePage
-        self.pageIndicatorTintColor = pageIndicatorTintColor
-        self.currentPageIndicatorTintColor = currentPageIndicatorTintColor
     }
     
     public func makeUIView(context: Context) -> UIPageControl {
