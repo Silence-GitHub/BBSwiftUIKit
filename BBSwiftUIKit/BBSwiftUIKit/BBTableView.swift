@@ -8,6 +8,10 @@
 
 import SwiftUI
 
+public extension CGFloat {
+    static let bb_invalidBottomSpaceForLoadingMore = CGFloat.greatestFiniteMagnitude
+}
+
 public extension BBTableView {
     func bb_reloadData(_ reloadData: Binding<Bool>) -> Self {
         var view = self
@@ -45,10 +49,17 @@ public extension BBTableView {
         return view
     }
     
-    func bb_pullDownToRefresh(_ isRefreshing: Binding<Bool>, refresh: @escaping () -> Void) -> Self {
+    func bb_pullDownToRefresh(isRefreshing: Binding<Bool>, refresh: @escaping () -> Void) -> Self {
         var view = self
         view._isRefreshing = isRefreshing
         view.pullDownToRefresh = refresh
+        return view
+    }
+    
+    func bb_pullUpToLoadMore(bottomSpace: CGFloat, loadMore: @escaping () -> Void) -> Self {
+        var view = self
+        view.bottomSpaceForLoadingMore = bottomSpace
+        view.pullUpToLoadMore = loadMore
         return view
     }
 }
@@ -84,6 +95,8 @@ public struct BBTableView<Data, Content>: UIViewControllerRepresentable, BBUIScr
     @Binding public var isRefreshing: Bool
     public var setupRefreshControl: ((UIRefreshControl) -> Void)?
     public var pullDownToRefresh: (() -> Void)?
+    public var bottomSpaceForLoadingMore: CGFloat
+    public var pullUpToLoadMore: (() -> Void)?
 
     public init(_ data: Data,
                 reloadData: Binding<Bool> = .constant(false),
@@ -100,6 +113,8 @@ public struct BBTableView<Data, Content>: UIViewControllerRepresentable, BBUIScr
                 isRefreshing: Binding<Bool> = .constant(false),
                 setupRefreshControl: ((UIRefreshControl) -> Void)? = nil,
                 pullDownToRefresh: (() -> Void)? = nil,
+                bottomSpaceForLoadingMore: CGFloat = .bb_invalidBottomSpaceForLoadingMore,
+                pullUpToLoadMore: (() -> Void)? = nil,
                 @ViewBuilder content: @escaping (Data.Element) -> Content)
     {
         self.data = data
@@ -118,6 +133,8 @@ public struct BBTableView<Data, Content>: UIViewControllerRepresentable, BBUIScr
         self._isRefreshing = isRefreshing
         self.setupRefreshControl = setupRefreshControl
         self.pullDownToRefresh = pullDownToRefresh
+        self.bottomSpaceForLoadingMore = bottomSpaceForLoadingMore
+        self.pullUpToLoadMore = pullUpToLoadMore
     }
 
     public func makeUIViewController(context: Context) -> UIViewController {
@@ -165,7 +182,7 @@ private class _BBTableViewController<Data, Content>: UIViewController, UITableVi
             tableView.refreshControl = refreshControl
         }
         
-        // TODO: Detect content offset to bottom space and load more data
+        // TODO: Refresh when first will appear
 
         NSLayoutConstraint.activate([
             view.leftAnchor.constraint(equalTo: tableView.leftAnchor),
@@ -264,6 +281,14 @@ private class _BBTableViewController<Data, Content>: UIViewController, UITableVi
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.representable.contentOffset = scrollView.contentOffset
+            
+            if self.representable.bottomSpaceForLoadingMore != .bb_invalidBottomSpaceForLoadingMore,
+                let loadMore = self.representable.pullUpToLoadMore {
+                let space = scrollView.contentSize.height - scrollView.contentOffset.y - scrollView.frame.height
+                if space <= self.representable.bottomSpaceForLoadingMore {
+                    loadMore()
+                }
+            }
         }
     }
 }

@@ -18,6 +18,7 @@ struct TableViewExample: View {
     @State var contentOffset: CGPoint = .zero
     @State var contentOffsetToScrollAnimated: CGPoint? = nil
     @State var isRefreshing: Bool = false
+    @State var isLoadingMore: Bool = false
     
     var body: some View {
         VStack {
@@ -45,10 +46,18 @@ struct TableViewExample: View {
                 refreshControl.tintColor = .blue
                 refreshControl.attributedTitle = NSAttributedString(string: "Loading...", attributes: [.font: UIFont.systemFont(ofSize: 15), .foregroundColor: UIColor.blue])
             }
-            .bb_pullDownToRefresh($isRefreshing) {
+            .bb_pullDownToRefresh(isRefreshing: $isRefreshing) {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                     self.reloadListData()
                     self.isRefreshing = false
+                }
+            }
+            .bb_pullUpToLoadMore(bottomSpace: 30) {
+                if self.isLoadingMore { return }
+                self.isLoadingMore = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    self.list = 0..<self.list.last! + 11
+                    self.isLoadingMore = false
                 }
             }
             
@@ -74,21 +83,13 @@ struct TableViewExample: View {
     }
     
     private func reloadListData() {
-        if self.list.count > 50 {
-            self.list = 0..<50
-        } else {
-            self.list = 0..<100
-        }
+        self.list = 0..<100
         self.updateHeight.toggle()
         self.reloadData = true
     }
     
     private func reloadListRows() {
-        if self.list.count > 50 {
-            self.list = 0..<50
-        } else {
-            self.list = 0..<100
-        }
+        self.list = 0..<100
         self.updateHeight.toggle()
         self.reloadRows = (0..<10).map { $0 }
     }
