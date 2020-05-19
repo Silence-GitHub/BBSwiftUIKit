@@ -90,34 +90,21 @@ public struct BBScrollView<Content: View>: UIViewRepresentable, BBUIScrollViewRe
     public let axis: Axis.Set
     @Binding public var contentOffset: CGPoint
     @Binding public var contentOffsetToScrollAnimated: CGPoint?
-    public var isPagingEnabled: Bool
-    public var bounces: Bool
-    public var alwaysBounceVertical: Bool
-    public var alwaysBounceHorizontal: Bool
-    public var showsVerticalScrollIndicator: Bool
-    public var showsHorizontalScrollIndicator: Bool
+    public var isPagingEnabled: Bool = false
+    public var bounces: Bool = true
+    public var alwaysBounceVertical: Bool = false
+    public var alwaysBounceHorizontal: Bool = false
+    public var showsVerticalScrollIndicator: Bool = true
+    public var showsHorizontalScrollIndicator: Bool = true
     public let content: () -> Content
     
     public init(_ axis: Axis.Set,
                 contentOffset: Binding<CGPoint> = .constant(.bb_invalidContentOffset),
-                contentOffsetToScrollAnimated: Binding<CGPoint?> = .constant(nil),
-                isPagingEnabled: Bool = false,
-                bounces: Bool = true,
-                alwaysBounceVertical: Bool = false,
-                alwaysBounceHorizontal: Bool = false,
-                showsVerticalScrollIndicator: Bool = true,
-                showsHorizontalScrollIndicator: Bool = true,
                 @ViewBuilder content: @escaping () -> Content)
     {
         self.axis = axis
         self._contentOffset = contentOffset
-        self._contentOffsetToScrollAnimated = contentOffsetToScrollAnimated
-        self.isPagingEnabled = isPagingEnabled
-        self.bounces = bounces
-        self.alwaysBounceVertical = alwaysBounceVertical
-        self.alwaysBounceHorizontal = alwaysBounceHorizontal
-        self.showsVerticalScrollIndicator = showsVerticalScrollIndicator
-        self.showsHorizontalScrollIndicator = showsHorizontalScrollIndicator
+        self._contentOffsetToScrollAnimated = .constant(nil)
         self.content = content
     }
     
