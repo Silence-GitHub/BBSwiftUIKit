@@ -36,6 +36,7 @@ struct ScrollViewExample2: View {
             Button("Shows vertical scroll indicator \(self.showsVerticalScrollIndicator ? "true" : "false")") {
                 self.showsVerticalScrollIndicator.toggle()
             }
+            .padding()
         }
     }
 }
