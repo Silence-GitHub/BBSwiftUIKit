@@ -14,7 +14,7 @@ struct TableViewExample: View {
     @State var updateHeight = false
     @State var reloadData = false
     @State var reloadRows: [Int] = []
-    @State var scrollToRow: BBTableViewScrollToRowParameter? = nil
+    @State var scrollToRow: Int? = nil
     @State var contentOffset: CGPoint = .zero
     @State var contentOffsetToScrollAnimated: CGPoint? = nil
     @State var isRefreshing: Bool = false
@@ -39,7 +39,7 @@ struct TableViewExample: View {
             }
             .bb_reloadData($reloadData)
             .bb_reloadRows($reloadRows)
-            .bb_scrollToRow($scrollToRow)
+            .bb_scrollToRow($scrollToRow, position: .none, animated: true)
             .bb_contentOffset($contentOffset)
             .bb_contentOffsetToScrollAnimated($contentOffsetToScrollAnimated)
             .bb_setupRefreshControl { refreshControl in
@@ -70,13 +70,13 @@ struct TableViewExample: View {
             
             Button("Reload data") {
                 self.reloadListData()
-                self.scrollToRow = BBTableViewScrollToRowParameter(row: 0, position: .top, animated: true)
+                self.scrollToRow = 0
             }
             .padding()
             
             Button("Reload rows") {
                 self.reloadListRows()
-                self.scrollToRow = BBTableViewScrollToRowParameter(row: 0, position: .top, animated: true)
+                self.scrollToRow = 0
             }
             .padding()
         }

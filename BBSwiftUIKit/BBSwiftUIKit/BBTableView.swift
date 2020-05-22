@@ -25,9 +25,11 @@ public extension BBTableView {
         return view
     }
     
-    func bb_scrollToRow(_ scrollToRow: Binding<BBTableViewScrollToRowParameter?>) -> Self {
+    func bb_scrollToRow(_ row: Binding<Int?>, position: UITableView.ScrollPosition, animated: Bool) -> Self {
         var view = self
-        view._scrollToRow = scrollToRow
+        view._scrollToRow = row
+        view.scrollToRowPosition = position
+        view.scrollToRowAnimated = animated
         return view
     }
     
@@ -76,25 +78,17 @@ public extension BBTableView {
     }
 }
 
-public struct BBTableViewScrollToRowParameter {
-    public let row: Int
-    public let position: UITableView.ScrollPosition
-    public let animated: Bool
-    
-    public init(row: Int, position: UITableView.ScrollPosition, animated: Bool) {
-        self.row = row
-        self.position = position
-        self.animated = animated
-    }
-}
-
 public struct BBTableView<Data, Content>: UIViewControllerRepresentable, BBUIScrollViewRepresentable where Data : RandomAccessCollection, Content : View, Data.Element : Equatable {
     let data: Data
     let content: (Data.Element) -> Content
     
     @Binding public var reloadData: Bool
     @Binding public var reloadRows: [Int]
-    @Binding public var scrollToRow: BBTableViewScrollToRowParameter?
+    
+    @Binding public var scrollToRow: Int?
+    public var scrollToRowPosition: UITableView.ScrollPosition = .none
+    public var scrollToRowAnimated: Bool = true
+    
     @Binding public var contentOffset: CGPoint
     @Binding public var contentOffsetToScrollAnimated: CGPoint?
     public var isPagingEnabled: Bool = false
@@ -230,8 +224,8 @@ private class _BBTableViewController<Data, Content>: UIViewController, UITableVi
         
         representable.updateTableView?(tableView)
         
-        if let scrollToRow = representable.scrollToRow {
-            tableView.scrollToRow(at: IndexPath(row: scrollToRow.row, section: 0), at: scrollToRow.position, animated: scrollToRow.animated)
+        if let row = representable.scrollToRow {
+            tableView.scrollToRow(at: IndexPath(row: row, section: 0), at: representable.scrollToRowPosition, animated: representable.scrollToRowAnimated)
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
                 self.representable.scrollToRow = nil
