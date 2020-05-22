@@ -19,9 +19,10 @@ public extension BBTableView {
         return view
     }
     
-    func bb_reloadRows(_ reloadRows: Binding<[Int]>) -> Self {
+    func bb_reloadRows(_ rows: Binding<[Int]>, animation: UITableView.RowAnimation) -> Self {
         var view = self
-        view._reloadRows = reloadRows
+        view._reloadRows = rows
+        view.reloadRowsAnimation = animation
         return view
     }
     
@@ -83,7 +84,9 @@ public struct BBTableView<Data, Content>: UIViewControllerRepresentable, BBUIScr
     let content: (Data.Element) -> Content
     
     @Binding public var reloadData: Bool
+    
     @Binding public var reloadRows: [Int]
+    public var reloadRowsAnimation: UITableView.RowAnimation = .automatic
     
     @Binding public var scrollToRow: Int?
     public var scrollToRowPosition: UITableView.ScrollPosition = .none
@@ -204,7 +207,7 @@ private class _BBTableViewController<Data, Content>: UIViewController, UITableVi
             }
             
             if !representable.reloadRows.isEmpty {
-                tableView.reloadRows(at: representable.reloadRows.map { IndexPath(row: $0, section: 0) }, with: .automatic)
+                tableView.reloadRows(at: representable.reloadRows.map { IndexPath(row: $0, section: 0) }, with: representable.reloadRowsAnimation)
                 
                 DispatchQueue.main.async { [weak self] in
                     guard let self = self else { return }

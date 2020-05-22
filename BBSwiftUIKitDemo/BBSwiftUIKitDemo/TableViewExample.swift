@@ -38,7 +38,7 @@ struct TableViewExample: View {
                 }
             }
             .bb_reloadData($reloadData)
-            .bb_reloadRows($reloadRows)
+            .bb_reloadRows($reloadRows, animation: .automatic)
             .bb_scrollToRow($scrollToRow, position: .none, animated: true)
             .bb_contentOffset($contentOffset)
             .bb_contentOffsetToScrollAnimated($contentOffsetToScrollAnimated)
