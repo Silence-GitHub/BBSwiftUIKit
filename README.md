@@ -18,11 +18,31 @@ A SwiftUI library with powerful UIKit features.
 
 ## Installation
 
-Install with CocoaPods:
+### CocoaPods
 
 1. Add `pod 'BBSwiftUIKit'` to your Podfile.
 2. Run `pod install` or `pod update`.
 3. Add `import BBSwiftUIKit` to the Swift source file.
+
+### Swift Package Manager
+
+BBSwiftUIKit is available through [Swift Package Manager](https://swift.org/package-manager/).
+
+- For App integration
+
+For App integration, you should using Xcode 11 or higher, to add this package to your App target. To do this, check [Adding Package Dependencies to Your App](https://developer.apple.com/documentation/xcode/adding_package_dependencies_to_your_app?language=objc) about the step by step tutorial using Xcode.
+
+- For downstream framework
+
+For downstream framework author, you should create a `Package.swift` file into your git repo, then add the following line to mark your framework dependent our BBSwiftUIKit.
+
+```
+let package = Package(
+    dependencies: [
+        .package(url: "https://github.com/Silence-GitHub/BBSwiftUIKit.git", from: "0.1.0")
+    ],
+)
+```
 
 ##  How to Use
 
