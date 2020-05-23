@@ -8,33 +8,32 @@
 
 import SwiftUI
 
+struct MenuItem<Content: View> {
+    let title: String
+    let view: Content
+}
+
+extension View {
+    var toAnyView: AnyView { AnyView(self) }
+}
+
 struct ContentView: View {
+    let items: [MenuItem<AnyView>] = [
+        MenuItem(title: "Scroll view", view: ScrollViewExample().toAnyView),
+        MenuItem(title: "Scroll view 2", view: ScrollViewExample2().toAnyView),
+        MenuItem(title: "Scroll view 3", view: ScrollViewExample3().toAnyView),
+        MenuItem(title: "Scroll view 4", view: ScrollViewExample4().toAnyView),
+        MenuItem(title: "Page control", view: PageControlExample().toAnyView),
+        MenuItem(title: "Cycle view manual", view: CycleViewExample(autoDisplay: false).toAnyView),
+        MenuItem(title: "Cycle view auto", view: CycleViewExample(autoDisplay: true).toAnyView),
+        MenuItem(title: "Table view", view: TableViewExample().toAnyView)
+    ]
+    
     var body: some View {
         NavigationView {
-            List {
-                NavigationLink(destination: ScrollViewExample()) {
-                    Text("Scroll view")
-                }
-                NavigationLink(destination: ScrollViewExample2()) {
-                    Text("Scroll view 2")
-                }
-                NavigationLink(destination: ScrollViewExample3()) {
-                    Text("Scroll view 3")
-                }
-                NavigationLink(destination: ScrollViewExample4()) {
-                    Text("Scroll view 4")
-                }
-                NavigationLink(destination: PageControlExample()) {
-                    Text("Page control")
-                }
-                NavigationLink(destination: CycleViewExample(autoDisplay: false)) {
-                    Text("Cycle view manual")
-                }
-                NavigationLink(destination: CycleViewExample(autoDisplay: true)) {
-                    Text("Cycle view auto")
-                }
-                NavigationLink(destination: TableViewExample()) {
-                    Text("Table view")
+            List(items, id: \.title) { item in
+                NavigationLink(destination: item.view) {
+                    Text(item.title)
                 }
             }
             .navigationBarTitle("", displayMode: .inline)
