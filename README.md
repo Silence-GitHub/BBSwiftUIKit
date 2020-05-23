@@ -57,48 +57,53 @@ BBScrollView(.horizontal, contentOffset: $contentOffset) {
 Use `BBTableView` with `UITableView` features.
 
 ```swift
-// Set true to reload data. After reloading, it will reset to false automatically
-@State var reloadData = false
+class Model: ObservableObject {
+    // Table view data source
+    @Published var list: [Int] = ...
+    
+    // Set true to reload data. After reloading, it will reset to false automatically
+    @Published var reloadData: Bool = false
+    
+    // Set row indexes to reload rows. After reloading, it will reset to empty automatically
+    @Published var reloadRows: [Int] = []
+    
+    // Set row index to scroll to the specific row. After scrolling, it will reset to nil automatically
+    @Published var scrollToRow: Int? = nil
 
-// Set row indexes to reload rows. After reloading, it will reset to empty automatically
-@State var reloadRows: [Int] = []
+    // Pull down to refresh data. While refreshing, this value is true. After refreshing, we need to set it false to end refreshing
+    @Published var isRefreshing: Bool = false
 
-// Set row index to scroll to the specific row. After scrolling, it will reset to nil automatically
-@State var scrollToRow: Int? = nil
+    // Pull up to loading more data. We should manage this value to prevent calling load more function too many times
+    @Published var isLoadingMore: Bool = false
+}
 
-// Pull down to refresh data. While refreshing, this value is true. After refreshing, we need to set it false to end refreshing
-@State var isRefreshing: Bool = false
-
-// Pull up to loading more data. We should manage this value to prevent calling load more function too many times
-@State var isLoadingMore: Bool = false
-
-// Create a table view with data
-BBTableView(list) { item in
+// Create a table view with data source
+BBTableView(model.list) { item in
     // Add views
 }
-.bb_reloadData($reloadData) // Reload data
-.bb_reloadRows($reloadRows, animation: .automatic) // Reload rows
-.bb_scrollToRow($scrollToRow, position: .none, animated: true) // Scroll to row
+.bb_reloadData($model.reloadData) // Reload data
+.bb_reloadRows($model.reloadRows, animation: .automatic) // Reload rows
+.bb_scrollToRow($model.scrollToRow, position: .none, animated: true) // Scroll to row
 .bb_setupRefreshControl { refreshControl in
-    // Custom refresh control appearance
+    // Update refresh control appearance
     refreshControl.tintColor = .blue
     refreshControl.attributedTitle = NSAttributedString(string: "Loading...", attributes: [.font: UIFont.systemFont(ofSize: 15), .foregroundColor: UIColor.blue])
 }
-.bb_pullDownToRefresh(isRefreshing: $isRefreshing) {
+.bb_pullDownToRefresh(isRefreshing: $model.isRefreshing) {
     // Pull down to refresh data
     // Now the value of isRefreshing is true
     self.loadNewData { newData in
-        self.dataSource = newData // Update data source
-        self.isRefreshing = false // End refreshing
+        self.model.list = newData // Update data source
+        self.model.isRefreshing = false // End refreshing
     }
 }
 .bb_pullUpToLoadMore(bottomSpace: 30) {
     // Pull up to load more data
-    if self.isLoadingMore { return } // Do not load more if it is loading more
-    self.isLoadingMore = true // Mark it is loading more
+    if self.model.isLoadingMore { return } // Do not load more if it is loading more
+    self.model.isLoadingMore = true // Mark it is loading more
     self.loadMoreData { moreData in
-        self.dataSource.append(moreData) // Update data source
-        self.isLoadingMore = false // Mark it is NOT loading more
+        self.model.list.append(moreData) // Update data source
+        self.model.isLoadingMore = false // Mark it is NOT loading more
     }
 }
 ```

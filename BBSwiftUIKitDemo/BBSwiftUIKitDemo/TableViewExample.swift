@@ -12,9 +12,9 @@ import BBSwiftUIKit
 struct TableViewExample: View {
 
     class Model: ObservableObject {
-        @Published var list = 0..<100
-        @Published var updateHeight = false
-        @Published var reloadData = false
+        @Published var list: Range<Int> = 0..<100
+        @Published var updateHeight: Bool = false
+        @Published var reloadData: Bool = false
         @Published var reloadRows: [Int] = []
         @Published var scrollToRow: Int? = nil
         @Published var contentOffset: CGPoint = .zero
