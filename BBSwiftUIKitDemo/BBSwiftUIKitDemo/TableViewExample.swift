@@ -10,88 +10,93 @@ import SwiftUI
 import BBSwiftUIKit
 
 struct TableViewExample: View {
-    @State var list = 0..<100
-    @State var updateHeight = false
-    @State var reloadData = false
-    @State var reloadRows: [Int] = []
-    @State var scrollToRow: Int? = nil
-    @State var contentOffset: CGPoint = .zero
-    @State var contentOffsetToScrollAnimated: CGPoint? = nil
-    @State var isRefreshing: Bool = false
-    @State var isLoadingMore: Bool = false
+
+    class Model: ObservableObject {
+        @Published var list = 0..<100
+        @Published var updateHeight = false
+        @Published var reloadData = false
+        @Published var reloadRows: [Int] = []
+        @Published var scrollToRow: Int? = nil
+        @Published var contentOffset: CGPoint = .zero
+        @Published var contentOffsetToScrollAnimated: CGPoint? = nil
+        @Published var isRefreshing: Bool = false
+        @Published var isLoadingMore: Bool = false
+        
+        func reloadListData() {
+            self.list = 0..<100
+            self.updateHeight.toggle()
+            self.reloadData = true
+        }
+        
+        func reloadListRows() {
+            list = 0..<100
+            updateHeight.toggle()
+            reloadRows = (0..<10).map { $0 }
+        }
+    }
+    
+    @ObservedObject var model = Model()
     
     var body: some View {
         VStack {
-            BBTableView(list) { i in
+            BBTableView(model.list) { i in
                 if i % 2 == 0 {
-                    Text("\(i)")
-                        .frame(height: self.updateHeight ? 50 : 100)
+                    Text("\(i)\(self.model.updateHeight ? "" : "A")")
+                        .frame(height: self.model.updateHeight ? 50 : 100)
                         .padding()
                         .background(Color.blue)
                 } else {
                     Image(systemName: "heart")
                         .resizable()
                         .scaledToFit()
-                        .frame(height: self.updateHeight ? 20 : 40)
+                        .frame(height: self.model.updateHeight ? 20 : 40)
                         .padding()
                         .background(Color.orange)
                 }
             }
-            .bb_reloadData($reloadData)
-            .bb_reloadRows($reloadRows, animation: .automatic)
-            .bb_scrollToRow($scrollToRow, position: .none, animated: true)
-            .bb_contentOffset($contentOffset)
-            .bb_contentOffsetToScrollAnimated($contentOffsetToScrollAnimated)
+            .bb_reloadData($model.reloadData)
+            .bb_reloadRows($model.reloadRows, animation: .automatic)
+            .bb_scrollToRow($model.scrollToRow, position: .none, animated: true)
+            .bb_contentOffset($model.contentOffset)
+            .bb_contentOffsetToScrollAnimated($model.contentOffsetToScrollAnimated)
             .bb_setupRefreshControl { refreshControl in
                 refreshControl.tintColor = .blue
                 refreshControl.attributedTitle = NSAttributedString(string: "Loading...", attributes: [.font: UIFont.systemFont(ofSize: 15), .foregroundColor: UIColor.blue])
             }
-            .bb_pullDownToRefresh(isRefreshing: $isRefreshing) {
+            .bb_pullDownToRefresh(isRefreshing: $model.isRefreshing) {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                    self.reloadListData()
-                    self.isRefreshing = false
+                    self.model.reloadListData()
+                    self.model.isRefreshing = false
                 }
             }
             .bb_pullUpToLoadMore(bottomSpace: 30) {
-                if self.isLoadingMore { return }
-                self.isLoadingMore = true
+                if self.model.isLoadingMore { return }
+                self.model.isLoadingMore = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                    self.list = 0..<self.list.last! + 11
-                    self.isLoadingMore = false
+                    self.model.list = 0..<self.model.list.last! + 11
+                    self.model.isLoadingMore = false
                 }
             }
             
-            Slider(value: $contentOffset.y, in: 0...1000)
+            Slider(value: $model.contentOffset.y, in: 0...1000)
             
             Button("Scroll to y = 1000") {
-                self.contentOffsetToScrollAnimated = CGPoint(x: 0, y: 1000)
+                self.model.contentOffsetToScrollAnimated = CGPoint(x: 0, y: 1000)
             }
             .padding()
             
             Button("Reload data") {
-                self.reloadListData()
-                self.scrollToRow = 0
+                self.model.reloadListData()
+                self.model.scrollToRow = 0
             }
             .padding()
             
             Button("Reload rows") {
-                self.reloadListRows()
-                self.scrollToRow = 0
+                self.model.reloadListRows()
+                self.model.scrollToRow = 0
             }
             .padding()
         }
-    }
-    
-    private func reloadListData() {
-        self.list = 0..<100
-        self.updateHeight.toggle()
-        self.reloadData = true
-    }
-    
-    private func reloadListRows() {
-        self.list = 0..<100
-        self.updateHeight.toggle()
-        self.reloadRows = (0..<10).map { $0 }
     }
 }
 
